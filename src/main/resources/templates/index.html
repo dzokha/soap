@@ -124,9 +124,9 @@
                 </button>
             </nav>
             <div class="px-6 mt-auto">
-                <button class="w-full bg-slate-900 text-white py-3 rounded-xl font-semibold hover:bg-slate-800 transition shadow-lg shadow-slate-200">
-                    <i class="fa-solid fa-play mr-2"></i> Run Full Pipeline
-                </button>
+                <footer class="text-center text-sm text-gray-500 mt-10 pb-5">
+                    SOAP System &copy; 2026 Dzokha. <br/>
+                </footer>
             </div>
         </aside>
 
@@ -289,11 +289,6 @@
         </div>
     </div>
 
-    <footer class="text-center text-sm text-gray-500 mt-10 pb-5">
-        SOAP Analysis System &copy; 2026 Dzokha. <br/>
-        Core analysis engine is proudly powered by <a href="https://github.com/s-andrews/FastQC" target="_blank" class="text-blue-500 hover:underline">FastQC</a>.
-    </footer>
-
     <!-- JavaScript Logic -->
     <script th:inline="javascript">
         // --- Logic Chuyển Tab (Stepper) ---
@@ -363,27 +358,75 @@
                 placeholder.style.display = "none";
                 resultDiv.innerHTML = `<i class="fa-solid fa-check text-emerald-500 mr-2"></i> Hoàn tất phân tích ${data.length} file.`;
 
+
                 data.forEach((report, index) => {
                     const sectionId = `report-section-${index}`;
                     
                     const div = document.createElement('div');
                     div.className = 'bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm';
                     
+                    
                     div.innerHTML = `
                         <h3 class="text-lg font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-6">
                             ${report.fileName}
                         </h3>
                         
+                        <!-- 1. Per Base Sequence Quality -->
                         <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4"><i class="fa-solid fa-chart-bar mr-2"></i>1. Per Base Sequence Quality</h4>
-                            <div id="quality-${sectionId}" class="w-full overflow-x-auto min-h-[200px] border border-slate-100 rounded bg-slate-50/50 p-2"></div>
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-bar mr-2"></i>1. Per Base Sequence Quality</h4>
+                            <div id="quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                         </div>
                         
+                        <!-- 2. Per Sequence Quality Scores -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-wave-square mr-2"></i>2. Per Sequence Quality Scores</h4>
+                            <div id="seq-quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- 3. Per Base Sequence Content -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-line mr-2"></i>3. Per Base Sequence Content</h4>
+                            <div id="base-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- 4. Per Sequence GC Content -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-area mr-2"></i>4. Per Sequence GC Content</h4>
+                            <div id="gc-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- 5. Per Base N Content -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-minus mr-2"></i>5. Per Base N Content</h4>
+                            <div id="n-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- 6. Sequence Length Distribution -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-ruler-horizontal mr-2"></i>6. Sequence Length Distribution</h4>
+                            <div id="len-dist-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- 7. Sequence Duplication Levels -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-copy mr-2"></i>7. Sequence Duplication Levels</h4>
+                            <div id="dup-level-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- 8. Overrepresented Sequences -->
+                        <div class="mb-8">
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-table-list mr-2"></i>8. Overrepresented Sequences</h4>
+                            <div id="overrepresented-${sectionId}" class="w-full"></div>
+                        </div>
+
+                        <!-- 9. Adapter Content -->
                         <div>
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4"><i class="fa-solid fa-chart-line mr-2"></i>2. Adapter Content</h4>
-                            <div id="adapter-${sectionId}" class="w-full overflow-x-auto min-h-[200px] border border-slate-100 rounded bg-slate-50/50 p-2"></div>
+                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-link mr-2"></i>9. Adapter Content</h4>
+                            <div id="adapter-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                         </div>
                     `;
+                    
+
                     chartContainer.appendChild(div);
 
                     // Gọi hàm vẽ biểu đồ từ chart-logic.js
@@ -402,6 +445,15 @@
                     } else {
                         document.getElementById(`adapter-${sectionId}`).innerHTML = "<div class='text-center mt-10'><span class='bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Trình tự sạch, không phát hiện Adapter.</span></div>";
                     }
+
+                    if (report.perSeqQualityData) drawPerSequenceQualityChart(`#seq-quality-${sectionId}`, report.perSeqQualityData);
+                    if (report.perBaseContentData) drawPerBaseSequenceContentChart(`#base-content-${sectionId}`, report.perBaseContentData);
+                    if (report.gcContentData) drawPerSequenceGCContentChart(`#gc-content-${sectionId}`, report.gcContentData);
+                    if (report.nContentData) drawPerBaseNContentChart(`#n-content-${sectionId}`, report.nContentData);
+                    if (report.lengthDistributionData) drawSequenceLengthDistributionChart(`#len-dist-${sectionId}`, report.lengthDistributionData);
+                    if (report.duplicationLevelsData) drawDuplicationLevelsChart(`#dup-level-${sectionId}`, report.duplicationLevelsData);
+                    if (report.overrepresentedData) drawOverrepresentedTable(`#overrepresented-${sectionId}`, report.overrepresentedData);
+
                 });
 
             } catch (error) {

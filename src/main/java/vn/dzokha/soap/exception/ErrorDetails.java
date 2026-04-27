@@ -1,4 +1,4 @@
-package vn.dzokha.soap.Exception;
+package vn.dzokha.soap.exception;
 
 import java.time.LocalDateTime;
 

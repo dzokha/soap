@@ -18,12 +18,12 @@ import java.util.stream.Collectors;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
-import vn.dzokha.soap.engine.shared.ModuleFactory;
-import vn.dzokha.soap.engine.shared.QCModule;
-import vn.dzokha.soap.model.sequence.SequenceFactory;
-import vn.dzokha.soap.model.sequence.SequenceFile;
-import vn.dzokha.soap.model.AnalysisResult;
-import vn.dzokha.soap.dto.AnalysisRequestDTO;
+import vn.dzokha.soap.engine.qc.core.ModuleFactory;
+import vn.dzokha.soap.engine.qc.core.QCModule;
+import vn.dzokha.soap.io.parser.SequenceFactory;
+import vn.dzokha.soap.io.parser.SequenceFile;
+import vn.dzokha.soap.domain.job.AnalysisResult;
+import vn.dzokha.soap.dto.request.AnalysisRequestDTO;
 import vn.dzokha.soap.config.SOAPProperties; 
 
 

@@ -1,11 +1,11 @@
 package vn.dzokha.soap.service;
 
 import org.springframework.stereotype.Component;
-import vn.dzokha.soap.engine.shared.BasicStats;
-import vn.dzokha.soap.engine.shared.QCModule;
-import vn.dzokha.soap.model.sequence.Sequence;
-import vn.dzokha.soap.model.sequence.SequenceFile;
-import vn.dzokha.soap.model.sequence.SequenceFormatException;
+import vn.dzokha.soap.engine.qc.modules.BasicStats;
+import vn.dzokha.soap.engine.qc.core.QCModule;
+import vn.dzokha.soap.domain.sequence.Sequence;
+import vn.dzokha.soap.io.parser.SequenceFile;
+import vn.dzokha.soap.io.parser.SequenceFormatException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

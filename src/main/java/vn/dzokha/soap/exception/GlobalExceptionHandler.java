@@ -1,4 +1,4 @@
-package vn.dzokha.soap.Exception;
+package vn.dzokha.soap.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -2,8 +2,8 @@ package vn.dzokha.soap.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
-import vn.dzokha.soap.engine.shared.BasicStats;
-import vn.dzokha.soap.dto.BasicStatsDTO;
+import vn.dzokha.soap.engine.qc.modules.BasicStats;
+import vn.dzokha.soap.dto.response.BasicStatsDTO;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BasicStatsMapper {
