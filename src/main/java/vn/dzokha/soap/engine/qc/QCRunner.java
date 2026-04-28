@@ -1,4 +1,4 @@
-package vn.dzokha.soap.service;
+package vn.dzokha.soap.engine.qc;
 
 import org.springframework.stereotype.Component;
 import vn.dzokha.soap.engine.qc.modules.BasicStats;
@@ -13,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Scanner;
 
 @Component
-public class AnalysisRunner {
+public class QCRunner {
 
-    private static final Logger log = LoggerFactory.getLogger(AnalysisRunner.class);
+    private static final Logger log = LoggerFactory.getLogger(QCRunner.class);
 
     /**
      * Chạy phân tích đồng bộ trên luồng được giao bởi Service.

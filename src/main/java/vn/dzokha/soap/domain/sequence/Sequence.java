@@ -9,8 +9,8 @@ public class Sequence implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String id;
-    private final String sequence;
-    private final String quality;
+    private String sequence;
+    private String quality;
     private final boolean isColorspace; 
     private boolean isFiltered = false;
 
@@ -40,4 +40,13 @@ public class Sequence implements Serializable {
     public boolean isFiltered() { return isFiltered; }
     public void setFiltered(boolean filtered) { this.isFiltered = filtered; }
     public void setFile(File file) { this.sourceFile = file; }
+
+    // THÊM 2 HÀM SETTER NÀY VÀO ĐỂ CẬP NHẬT DỮ LIỆU SAU KHI CẮT (TRIMMING)
+    public void setSequence(String sequence) {
+        this.sequence = sequence;
+    }
+
+    public void setQualityString(String quality) {
+        this.quality = quality;
+    }
 }

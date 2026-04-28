@@ -5,15 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SOAP - Phage Genomics Pipeline</title>
     
-    <!-- Tailwind CSS (thay thế cho soap.css cũ) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- === BẮT BUỘC PHẢI CÓ REACT ĐỂ CHẠY SEQVIZ === -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- === THÊM THƯ VIỆN SEQVIZ === -->
+    <script src="https://unpkg.com/seqviz"></script>
 
     <style>
-        /* Các CSS đặc thù không dùng được bằng Tailwind */
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
         
         /* Spinner Loader Custom */
@@ -23,7 +28,7 @@
             width: 40px;
             height: 40px;
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6; /* Tailwind blue-500 */
+            border-top: 4px solid #3b82f6; 
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -92,11 +97,11 @@
                     <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-500">2</div>
                     <div class="text-left">
                         <div class="text-sm">Trimming</div>
-                        <div class="text-xs font-normal opacity-80">Trim Galore</div>
+                        <div class="text-xs font-normal opacity-80">Native Trimmer</div>
                     </div>
                 </button>
 
-                <!-- Step 3: Re-QC -->
+                <!-- Step 3: Clean QC -->
                 <button onclick="switchTab('tab-qc2')" id="btn-tab-qc2" class="tab-btn w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
                     <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-500">3</div>
                     <div class="text-left">
@@ -122,6 +127,15 @@
                         <div class="text-xs font-normal opacity-80">Pharokka</div>
                     </div>
                 </button>
+
+                <!-- BƯỚC 6: VISUALIZATION -->
+                <button onclick="switchTab('tab-visualize')" id="btn-tab-visualize" class="tab-btn w-full flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium transition-all">
+                    <div class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-500">6</div>
+                    <div class="text-left">
+                        <div class="text-sm">Visualization</div>
+                        <div class="text-xs font-normal opacity-80">SeqViz Map</div>
+                    </div>
+                </button>
             </nav>
             <div class="px-6 mt-auto">
                 <footer class="text-center text-sm text-gray-500 mt-10 pb-5">
@@ -133,132 +147,177 @@
         <!-- Main Content Area -->
         <main class="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50">
             
-            <!-- ========================================== -->
-            <!-- TAB 1: RAW QC (Code hiện tại của bạn)      -->
-            <!-- ========================================== -->
+            <!-- TAB 1: RAW QC -->
             <div id="tab-qc1" class="tab-content block max-w-4xl mx-auto space-y-6">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-slate-800">Bước 1: Quality Control (QC)</h2>
-                    <p class="text-slate-500">Kiểm tra chất lượng dữ liệu thô từ máy giải trình tự (Illumina) trước khi xử lý.</p>
                 </div>
-
-                <!-- Box Upload -->
-                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center transition-all hover:border-blue-400 hover:shadow-md">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center hover:border-blue-400 hover:shadow-md transition">
                     <input type="file" id="fileInput" multiple accept=".fastq,.fq,.gz" class="hidden">
                     <label for="fileInput" class="cursor-pointer block">
                         <div class="w-20 h-20 mx-auto bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
                             <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
                         </div>
-                        <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file vào đây hoặc Nhấn để chọn</h3>
-                        <p class="text-sm text-slate-500 mb-4">Hỗ trợ các định dạng: .fastq, .fq, .fq.gz</p>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file FASTQ vào đây</h3>
                     </label>
                     <div id="file-list" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
-                    
-                    <button id="analyzeBtn" onclick="uploadFile()" class="mt-6 px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none">
-                        <i class="fa-solid fa-chart-line mr-2"></i> Bắt đầu phân tích (QC)
+                    <button id="analyzeBtn" onclick="uploadFile()" class="mt-6 px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-md">
+                        Bắt đầu phân tích (QC)
                     </button>
                     <div id="spinner" class="spinner"></div>
                     <div id="result-status" class="mt-4 font-semibold text-blue-600 hidden"></div>
                 </div>
-
-                <!-- Khu vực hiển thị biểu đồ -->
                 <div id="chart-area" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 min-h-[400px] relative flex flex-col">
                     <div id="placeholder-text" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
                         <i class="fa-solid fa-chart-pie text-5xl mb-3 opacity-50"></i>
                         <p class="font-medium">Kết quả phân tích FastQC sẽ hiển thị tại đây</p>
                     </div>
-                    
-                    <!-- Container cho logic JS sinh ra báo cáo -->
                     <div id="gc-chart-container" class="w-full relative z-10"></div>
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- TAB 2: TRIMMING (Mockup cho tương lai)     -->
-            <!-- ========================================== -->
+            <!-- TAB 2: TRIMMING -->
             <div id="tab-trim" class="tab-content hidden max-w-4xl mx-auto space-y-6">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Bước 2: Trimming (Làm sạch dữ liệu)</h2>
-                    <p class="text-slate-500">Sử dụng thuật toán Trim Galore để cắt bỏ Adapter và lọc các base kém chất lượng.</p>
-                </div>
-                
+                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Bước 2: Trimming (Làm sạch dữ liệu)</h2></div>
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-lg border-b pb-3 mb-5"><i class="fa-solid fa-scissors mr-2 text-slate-400"></i>Cấu hình Trim Galore</h3>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-2">Quality Phred Score cutoff</label>
-                            <input type="range" min="10" max="30" value="20" class="w-full accent-blue-600">
-                            <div class="flex justify-between text-xs text-slate-400 mt-1"><span>10</span><span>Mặc định: 20</span><span>30</span></div>
+                            <input type="range" id="trim-quality" min="10" max="35" value="20" class="w-full accent-blue-600" oninput="document.getElementById('trim-quality-val').innerText = this.value">
+                            <div class="flex justify-between text-xs text-slate-400 mt-1"><span>10</span><span class="font-bold text-blue-600">Đã chọn: <span id="trim-quality-val">20</span></span><span>35</span></div>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 mb-2">Độ dài đoạn đọc tối thiểu (Minimum Length)</label>
-                            <input type="number" value="35" class="w-full border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="number" id="trim-minlength" value="35" class="w-full border border-slate-300 rounded-lg px-4 py-2 outline-none">
                         </div>
                     </div>
-
                     <div class="mt-6">
                         <label class="flex items-center space-x-3 text-slate-700">
-                            <input type="checkbox" checked class="w-5 h-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                            <input type="checkbox" id="trim-adapter" checked class="w-5 h-5 rounded border-slate-300 text-blue-600">
                             <span class="font-medium">Tự động phát hiện và cắt Illumina Adapters</span>
                         </label>
                     </div>
-
+                    <div id="trim-spinner" class="spinner mt-4"></div>
+                    <div id="trim-status" class="mt-4 text-center font-semibold text-blue-600 hidden"></div>
                     <div class="mt-8 pt-6 border-t flex justify-end">
-                        <button class="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition">Tiến hành Trimming</button>
+                        <button id="btn-run-trim" onclick="runTrimming()" class="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition">Tiến hành Trimming</button>
                     </div>
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- TAB 4: ASSEMBLY (Mockup cho tương lai)     -->
-            <!-- ========================================== -->
-            <div id="tab-assembly" class="tab-content hidden max-w-4xl mx-auto space-y-6">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Bước 4: Genome Assembly</h2>
-                    <p class="text-slate-500">Lắp ráp các đoạn đọc ngắn thành bộ gene hoàn chỉnh (Scaffolds/Circular).</p>
+            <!-- TAB 3: CLEAN QC -->
+            <div id="tab-qc2" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Bước 3: Clean QC (Kiểm tra lại)</h2></div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center hover:border-emerald-400 hover:shadow-md transition">
+                    <input type="file" id="fileInput2" multiple accept=".fastq,.fq,.gz" class="hidden">
+                    <label for="fileInput2" class="cursor-pointer block">
+                        <div class="w-20 h-20 mx-auto bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4"><i class="fa-solid fa-file-shield text-3xl"></i></div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file đã làm sạch vào đây</h3>
+                    </label>
+                    <div id="file-list2" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
+                    <button id="analyzeBtn2" onclick="uploadCleanFile()" class="mt-6 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Phân tích Clean QC</button>
+                    <div id="spinner2" class="spinner" style="border-top-color: #10b981;"></div>
+                    <div id="result-status2" class="mt-4 font-semibold text-emerald-600 hidden"></div>
                 </div>
-                
+                <div id="chart-area2" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 min-h-[400px] relative flex flex-col">
+                    <div id="placeholder-text2" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                        <i class="fa-solid fa-chart-pie text-5xl mb-3 opacity-50"></i><p class="font-medium">Kết quả phân tích Clean FastQC sẽ hiển thị tại đây</p>
+                    </div>
+                    <div id="gc-chart-container2" class="w-full relative z-10"></div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ASSEMBLY -->
+            <div id="tab-assembly" class="tab-content hidden max-w-4xl mx-auto space-y-6">
+                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Bước 4: Genome Assembly</h2></div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center hover:border-indigo-400 hover:shadow-md transition mb-6">
+                    <input type="file" id="fileInputAssembly" multiple accept=".fastq,.fq,.gz" class="hidden">
+                    <label for="fileInputAssembly" class="cursor-pointer block">
+                        <div class="w-20 h-20 mx-auto bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4"><i class="fa-solid fa-layer-group text-3xl"></i></div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file đã làm sạch vào đây</h3>
+                    </label>
+                    <div id="file-list-assembly" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
+                </div>
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
                     <label class="block text-sm font-semibold text-slate-700 mb-4">Lựa chọn thuật toán lắp ráp (Assembler):</label>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                         <label class="relative border-2 border-blue-500 bg-blue-50 p-4 rounded-xl cursor-pointer flex items-start gap-3">
-                            <input type="radio" name="assembler" checked class="mt-1">
-                            <div>
-                                <span class="block font-bold text-blue-800">Unicycler</span>
-                                <span class="text-sm text-blue-600/80">Tối ưu cho vi khuẩn và Phage. Cố gắng tạo bộ gene dạng vòng tròn (Circular).</span>
-                            </div>
+                            <input type="radio" name="assembler" value="Unicycler" checked class="mt-1">
+                            <div><span class="block font-bold text-blue-800">Unicycler</span><span class="text-sm text-blue-600/80">Tối ưu cho vi khuẩn và Phage.</span></div>
                         </label>
                         <label class="relative border-2 border-slate-200 hover:border-slate-300 p-4 rounded-xl cursor-pointer flex items-start gap-3 transition">
-                            <input type="radio" name="assembler" class="mt-1">
-                            <div>
-                                <span class="block font-bold text-slate-700">SPAdes</span>
-                                <span class="text-sm text-slate-500">Thuật toán đa dụng, độ chính xác cao cho các bộ gene phức tạp.</span>
-                            </div>
+                            <input type="radio" name="assembler" value="SPAdes" class="mt-1">
+                            <div><span class="block font-bold text-slate-700">SPAdes</span><span class="text-sm text-slate-500">Thuật toán đa dụng.</span></div>
                         </label>
                     </div>
-                    <div class="flex justify-end">
-                        <button class="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition">Bắt đầu Lắp ráp</button>
+                    <div id="assembly-spinner" class="spinner mt-4" style="border-top-color: #4f46e5;"></div>
+                    <div id="assembly-status" class="mt-4 text-center font-semibold text-indigo-600 hidden"></div>
+                    <div class="mt-8 pt-6 border-t flex justify-end">
+                        <button id="btn-run-assembly" onclick="runAssembly()" class="px-6 py-2.5 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition">Bắt đầu Lắp ráp</button>
                     </div>
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- TAB 5: ANNOTATION (Mockup cho tương lai)   -->
-            <!-- ========================================== -->
+            <!-- TAB 5: ANNOTATION -->
             <div id="tab-annotation" class="tab-content hidden max-w-4xl mx-auto space-y-6">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Bước 5: Chú giải bộ gene (Annotation)</h2>
-                    <p class="text-slate-500">Sử dụng Pharokka để tìm kiếm và định danh các gene (CDS, tRNA) trong hệ gene Phage.</p>
+                <div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">Bước 5: Chú giải bộ gene (Annotation)</h2></div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center hover:border-emerald-400 hover:shadow-md transition mb-6">
+                    <input type="file" id="fileInputAnnotation" accept=".fasta,.fa,.fna" class="hidden">
+                    <label for="fileInputAnnotation" class="cursor-pointer block">
+                        <div class="w-20 h-20 mx-auto bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4"><i class="fa-solid fa-file-code text-3xl"></i></div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file Fasta vào đây</h3>
+                    </label>
+                    <div id="file-list-annotation" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
                 </div>
-                
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center">
                     <i class="fa-solid fa-tags text-6xl text-emerald-400 mb-4"></i>
                     <h3 class="text-xl font-bold text-slate-800 mb-2">Pharokka Annotation Engine</h3>
-                    <p class="text-slate-600 mb-6 max-w-lg mx-auto">Đầu vào của quá trình này là file Fasta (.fasta) đã được lắp ráp từ bước Assembly. Kết quả sẽ được xuất ra định dạng GenBank (.gbk) chuẩn NCBI.</p>
-                    <button class="px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
-                        Chạy Pharokka
+                    <div id="annotation-spinner" class="spinner mt-4" style="border-top-color: #10b981;"></div>
+                    <div id="annotation-status" class="mt-4 text-center font-semibold text-emerald-600 hidden"></div>
+                    <button id="btn-run-annotation" onclick="runAnnotation()" class="mt-6 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Chạy Pharokka</button>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 6: VISUALIZATION (TÍCH HỢP SEQVIZ)     -->
+            <!-- ========================================== -->
+            <div id="tab-visualize" class="tab-content hidden max-w-5xl mx-auto space-y-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Bước 6: Trực quan hóa (Visualization)</h2>
+                    <p class="text-slate-500">Hiển thị bản đồ gene tương tác trực tiếp trên Web. Cấu trúc GenBank sẽ được phân tích và vẽ tự động bằng thư viện <a href="https://github.com/Lattice-Automation/seqviz" target="_blank" class="text-violet-500 hover:underline">SeqViz</a>.</p>
+                </div>
+                
+                <!-- Box Upload Visualization -->
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center transition-all hover:border-violet-400 hover:shadow-md mb-6">
+                    <input type="file" id="fileInputVisualize" accept=".gbk,.gb,.fasta,.fa" class="hidden">
+                    <label for="fileInputVisualize" class="cursor-pointer block">
+                        <div class="w-20 h-20 mx-auto bg-violet-50 text-violet-500 rounded-full flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-eye text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file GenBank (.gbk) vào đây</h3>
+                        <p class="text-sm text-slate-500 mb-4">Sử dụng file .gbk đã được chú giải từ Bước 5 để xem bản đồ</p>
+                    </label>
+                    <div id="file-list-visualize" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
+                    
+                    <button id="btn-run-visualize" onclick="runVisualization()" class="mt-6 px-8 py-3 bg-violet-600 text-white font-semibold rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-200">
+                        <i class="fa-solid fa-play mr-2"></i> Hiển thị Bản đồ Gene
                     </button>
+                    
+                    <div id="visualize-spinner" class="spinner mt-4" style="border-top-color: #8b5cf6;"></div>
+                    <div id="visualize-status" class="mt-4 font-semibold text-violet-600 hidden"></div>
+                </div>
+
+                <!-- KHU VỰC HIỂN THỊ SEQVIZ MAP -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden" style="height: 700px;">
+                    <!-- Placeholder khi chưa có dữ liệu -->
+                    <div id="seqviz-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 z-10 bg-white">
+                        <i class="fa-solid fa-circle-nodes text-5xl mb-3 opacity-50"></i>
+                        <p class="font-medium text-lg">Bản đồ gene (Plasmid / Phage Map) sẽ hiển thị tại đây</p>
+                        <p class="text-sm mt-2 opacity-70">Thay thế hoàn hảo cho phần mềm SnapGene</p>
+                    </div>
+                    
+                    <!-- Khung cho SeqViz render -->
+                    <div id="seqviz-container" class="w-full h-full relative z-0"></div>
                 </div>
             </div>
 
@@ -274,13 +333,12 @@
                 <button class="close-modal hover:text-blue-200 text-2xl leading-none">&times;</button>
             </div>
             <div class="p-6 text-slate-600 space-y-4 max-h-[70vh] overflow-y-auto">
-                <p>Hệ thống SOAP được thiết kế theo quy trình chuẩn cho phân tích Phage:</p>
                 <ol class="list-decimal pl-5 space-y-2 text-sm">
-                    <li><strong>Kiểm soát chất lượng (QC):</strong> Upload file `.fastq.gz` để FastQC kiểm tra độ dài, GC content và Adapter.</li>
-                    <li><strong>Làm sạch (Trimming):</strong> Trim Galore sẽ cắt bỏ đầu mồi và base lỗi.</li>
-                    <li><strong>Lắp ráp (Assembly):</strong> Chạy Unicycler để tạo bộ gene vòng (Circular genome).</li>
-                    <li><strong>Chú giải (Annotation):</strong> Pharokka phân tích và dán nhãn các gene.</li>
-                    <li><strong>Xuất dữ liệu:</strong> Tải file <code>.gbk</code> để xem bản đồ trên SnapGene.</li>
+                    <li><strong>Kiểm soát chất lượng (QC):</strong> Upload file `.fastq.gz` để kiểm tra.</li>
+                    <li><strong>Làm sạch (Trimming):</strong> Cắt bỏ đầu mồi và base lỗi.</li>
+                    <li><strong>Lắp ráp (Assembly):</strong> Tạo bộ gene vòng (Circular genome).</li>
+                    <li><strong>Chú giải (Annotation):</strong> Phân tích và dán nhãn các gene.</li>
+                    <li><strong>Trực quan hóa:</strong> Xem bản đồ gene trực tiếp bằng SeqViz.</li>
                 </ol>
             </div>
             <div class="bg-slate-50 px-6 py-4 border-t flex justify-end">
@@ -291,12 +349,15 @@
 
     <!-- JavaScript Logic -->
     <script th:inline="javascript">
-        // --- Logic Chuyển Tab (Stepper) ---
+        // Biến toàn cục
+        let globalFiles = [];
+        let globalCleanFiles = []; 
+        let globalAssemblyFiles = []; 
+        let globalAnnotationFiles = []; 
+        let globalVisualizeFiles = []; // Dành cho Bước 6
+
         function switchTab(tabId) {
-            // Ẩn tất cả nội dung
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            
-            // Xóa style active của tất cả nút
             document.querySelectorAll('.tab-btn').forEach(el => {
                 el.classList.remove('bg-blue-50', 'text-blue-700');
                 el.classList.add('text-slate-600', 'hover:bg-slate-50');
@@ -304,10 +365,7 @@
                 el.querySelector('div').classList.add('bg-slate-100', 'text-slate-500');
             });
 
-            // Hiển thị nội dung tương ứng
             document.getElementById(tabId).classList.remove('hidden');
-            
-            // Đổi style active cho nút được chọn
             const activeBtn = document.getElementById('btn-' + tabId);
             activeBtn.classList.add('bg-blue-50', 'text-blue-700');
             activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50');
@@ -315,30 +373,54 @@
             activeBtn.querySelector('div').classList.remove('bg-slate-100', 'text-slate-500');
         }
 
-        // --- Logic Xử lý File & AJAX (Giữ nguyên của Backend) ---
+        /* --- LOGIC BẮT SỰ KIỆN CHỌN FILE --- */
         document.getElementById('fileInput').addEventListener('change', function(e) {
-            const fileList = document.getElementById('file-list');
+            globalFiles = Array.from(this.files);
+            document.getElementById('file-list').innerHTML = globalFiles.map(f => `<span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-200 m-1"><i class="fa-solid fa-file-lines mr-1"></i>${f.name}</span>`).join('');
+        });
+        
+        document.getElementById('fileInput2').addEventListener('change', function(e) {
+            globalCleanFiles = Array.from(this.files); 
+            document.getElementById('file-list2').innerHTML = globalCleanFiles.map(f => `<span class="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium border border-emerald-200 m-1"><i class="fa-solid fa-file-lines mr-1"></i>${f.name}</span>`).join('');
+        });
+        
+        document.getElementById('fileInputAssembly').addEventListener('change', function(e) {
+            globalAssemblyFiles = Array.from(this.files); 
+            document.getElementById('file-list-assembly').innerHTML = globalAssemblyFiles.map(f => `<span class="inline-block bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-xs font-medium border border-indigo-200 m-1"><i class="fa-solid fa-file-lines mr-1"></i>${f.name}</span>`).join('');
+        });
+        
+        document.getElementById('fileInputAnnotation').addEventListener('change', function(e) {
+            globalAnnotationFiles = Array.from(this.files); 
+            document.getElementById('file-list-annotation').innerHTML = globalAnnotationFiles.map(f => `<span class="inline-block bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium border border-emerald-200 m-1"><i class="fa-solid fa-file-lines mr-1"></i>${f.name}</span>`).join('');
+        });
+
+        document.getElementById('fileInputVisualize').addEventListener('change', function(e) {
+            const fileList = document.getElementById('file-list-visualize');
             if(this.files.length > 0) {
-                fileList.innerHTML = Array.from(this.files).map(f => 
-                    `<span class="inline-block bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium border border-blue-200 m-1"><i class="fa-solid fa-file-lines mr-1"></i>${f.name}</span>`
+                globalVisualizeFiles = Array.from(this.files); 
+                fileList.innerHTML = globalVisualizeFiles.map(f => 
+                    `<span class="inline-block bg-violet-100 text-violet-700 px-3 py-1 rounded-full text-xs font-medium border border-violet-200 m-1"><i class="fa-solid fa-file-code mr-1"></i>${f.name}</span>`
                 ).join('');
             } else {
+                globalVisualizeFiles = [];
                 fileList.innerHTML = '';
             }
         });
 
+        /* --- LOGIC CÁC BƯỚC XỬ LÝ (ĐÃ ĐƯỢC KHÔI PHỤC ĐẦY ĐỦ) --- */
+
+        // Bước 1: QC
         async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
             const resultDiv = document.getElementById('result-status');
             const btn = document.getElementById('analyzeBtn');
             const spinner = document.getElementById('spinner');
             const placeholder = document.getElementById('placeholder-text');
             const chartContainer = document.getElementById('gc-chart-container');
 
-            if (fileInput.files.length === 0) return alert("Vui lòng chọn ít nhất một file!");
+            if (globalFiles.length === 0) return alert("Vui lòng chọn ít nhất một file!");
 
             const formData = new FormData();
-            Array.from(fileInput.files).forEach(file => formData.append("files", file));
+            globalFiles.forEach(file => formData.append("files", file));
 
             btn.disabled = true;
             spinner.style.display = "block";
@@ -348,114 +430,14 @@
             placeholder.style.display = "flex";
 
             try {
-                // Endpoint Spring Boot của bạn
                 const response = await fetch('/api/v1/soap/analyze', { method: 'POST', body: formData });
                 if (!response.ok) throw new Error("Lỗi Server: " + response.status);
 
                 const data = await response.json();
-                console.log("Dữ liệu nhận được:", data);
-
                 placeholder.style.display = "none";
                 resultDiv.innerHTML = `<i class="fa-solid fa-check text-emerald-500 mr-2"></i> Hoàn tất phân tích ${data.length} file.`;
 
-
-                data.forEach((report, index) => {
-                    const sectionId = `report-section-${index}`;
-                    
-                    const div = document.createElement('div');
-                    div.className = 'bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm';
-                    
-                    
-                    div.innerHTML = `
-                        <h3 class="text-lg font-bold text-slate-800 border-l-4 border-blue-500 pl-3 mb-6">
-                            ${report.fileName}
-                        </h3>
-                        
-                        <!-- 1. Per Base Sequence Quality -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-bar mr-2"></i>1. Per Base Sequence Quality</h4>
-                            <div id="quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-                        
-                        <!-- 2. Per Sequence Quality Scores -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-wave-square mr-2"></i>2. Per Sequence Quality Scores</h4>
-                            <div id="seq-quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-
-                        <!-- 3. Per Base Sequence Content -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-line mr-2"></i>3. Per Base Sequence Content</h4>
-                            <div id="base-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-
-                        <!-- 4. Per Sequence GC Content -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-area mr-2"></i>4. Per Sequence GC Content</h4>
-                            <div id="gc-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-
-                        <!-- 5. Per Base N Content -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-minus mr-2"></i>5. Per Base N Content</h4>
-                            <div id="n-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-
-                        <!-- 6. Sequence Length Distribution -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-ruler-horizontal mr-2"></i>6. Sequence Length Distribution</h4>
-                            <div id="len-dist-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-
-                        <!-- 7. Sequence Duplication Levels -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-copy mr-2"></i>7. Sequence Duplication Levels</h4>
-                            <div id="dup-level-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-
-                        <!-- 8. Overrepresented Sequences -->
-                        <div class="mb-8">
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-table-list mr-2"></i>8. Overrepresented Sequences</h4>
-                            <div id="overrepresented-${sectionId}" class="w-full"></div>
-                        </div>
-
-                        <!-- 9. Adapter Content -->
-                        <div>
-                            <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-link mr-2"></i>9. Adapter Content</h4>
-                            <div id="adapter-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
-                        </div>
-                    `;
-                    
-
-                    chartContainer.appendChild(div);
-
-                    // Gọi hàm vẽ biểu đồ từ chart-logic.js
-                    if (report.perBaseQualityData && report.perBaseQualityData.length > 0) {
-                        if (typeof drawPerBaseQualityChart === "function") {
-                            drawPerBaseQualityChart(`#quality-${sectionId}`, report.perBaseQualityData);
-                        }
-                    } else {
-                        document.getElementById(`quality-${sectionId}`).innerHTML = "<p class='text-slate-400 text-sm text-center mt-10'>Không có dữ liệu Quality.</p>";
-                    }
-
-                    if (report.adapterData && report.adapterData.length > 0) {
-                        if (typeof drawAdapterChart === "function") {
-                            drawAdapterChart(`#adapter-${sectionId}`, report.adapterData);
-                        }
-                    } else {
-                        document.getElementById(`adapter-${sectionId}`).innerHTML = "<div class='text-center mt-10'><span class='bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Trình tự sạch, không phát hiện Adapter.</span></div>";
-                    }
-
-                    if (report.perSeqQualityData) drawPerSequenceQualityChart(`#seq-quality-${sectionId}`, report.perSeqQualityData);
-                    if (report.perBaseContentData) drawPerBaseSequenceContentChart(`#base-content-${sectionId}`, report.perBaseContentData);
-                    if (report.gcContentData) drawPerSequenceGCContentChart(`#gc-content-${sectionId}`, report.gcContentData);
-                    if (report.nContentData) drawPerBaseNContentChart(`#n-content-${sectionId}`, report.nContentData);
-                    if (report.lengthDistributionData) drawSequenceLengthDistributionChart(`#len-dist-${sectionId}`, report.lengthDistributionData);
-                    if (report.duplicationLevelsData) drawDuplicationLevelsChart(`#dup-level-${sectionId}`, report.duplicationLevelsData);
-                    if (report.overrepresentedData) drawOverrepresentedTable(`#overrepresented-${sectionId}`, report.overrepresentedData);
-
-                });
-
+                renderCharts(data, chartContainer, 'raw');
             } catch (error) {
                 resultDiv.innerText = "Lỗi: " + error.message;
                 resultDiv.classList.replace('text-blue-600', 'text-red-500');
@@ -463,6 +445,420 @@
                 btn.disabled = false;
                 spinner.style.display = "none";
             }
+        }
+
+        // Bước 2: Trimming
+        async function runTrimming() {
+            if (globalFiles.length === 0) {
+                alert("Bạn chưa upload file dữ liệu. Vui lòng quay lại Bước 1: Raw QC để chọn file trước!");
+                switchTab('tab-qc1');
+                return;
+            }
+
+            const quality = document.getElementById('trim-quality').value;
+            const minlength = document.getElementById('trim-minlength').value;
+            const adapter = document.getElementById('trim-adapter').checked;
+
+            const btn = document.getElementById('btn-run-trim');
+            const spinner = document.getElementById('trim-spinner');
+            const statusDiv = document.getElementById('trim-status');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang cắt...`;
+            spinner.style.display = "block";
+            statusDiv.style.display = "block";
+            statusDiv.classList.remove('text-emerald-600', 'text-red-500');
+            statusDiv.classList.add('text-blue-600');
+            statusDiv.innerHTML = "Máy cắt SOAP Native đang chạy trên RAM...";
+
+            const formData = new FormData();
+            globalFiles.forEach(file => formData.append("files", file));
+            formData.append("qualityCutoff", quality);
+            formData.append("minLength", minlength);
+            formData.append("autoDetectAdapter", adapter);
+
+            try {
+                const response = await fetch('/api/v1/soap/trim', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                const blob = await response.blob();
+                let filename = "trimmed_output.fastq.gz";
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                statusDiv.classList.replace('text-blue-600', 'text-emerald-600');
+                statusDiv.innerHTML = `
+                    <i class="fa-solid fa-check-circle mr-2"></i> Trimming thành công! <br>
+                    File <b>${filename}</b> đang được tải xuống máy của bạn.
+                    <br><span class="text-sm font-normal text-slate-500 mt-2 block">Vui lòng tải file này lên ở Bước 3 (Clean QC) để kiểm tra lại.</span>
+                `;
+            } catch (error) {
+                statusDiv.classList.replace('text-blue-600', 'text-red-500');
+                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi hệ thống: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "Tiến hành Trimming";
+                spinner.style.display = "none";
+            }
+        }
+
+        // Bước 3: Clean QC
+        async function uploadCleanFile() {
+            const resultDiv = document.getElementById('result-status2');
+            const btn = document.getElementById('analyzeBtn2');
+            const spinner = document.getElementById('spinner2');
+            const placeholder = document.getElementById('placeholder-text2');
+            const chartContainer = document.getElementById('gc-chart-container2');
+
+            if (globalCleanFiles.length === 0) return alert("Vui lòng chọn ít nhất một file đã làm sạch!");
+
+            const formData = new FormData();
+            globalCleanFiles.forEach(file => formData.append("files", file));
+
+            btn.disabled = true;
+            spinner.style.display = "block";
+            resultDiv.style.display = "block";
+            resultDiv.classList.remove('text-red-500');
+            resultDiv.classList.add('text-emerald-600');
+            resultDiv.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang phân tích Clean QC...`;
+            chartContainer.innerHTML = ""; 
+            placeholder.style.display = "flex";
+
+            try {
+                const response = await fetch('/api/v1/soap/analyze', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error("Lỗi Server: " + response.status);
+
+                const data = await response.json();
+                placeholder.style.display = "none";
+                resultDiv.innerHTML = `<i class="fa-solid fa-check text-emerald-500 mr-2"></i> Hoàn tất phân tích Clean QC cho ${data.length} file.`;
+
+                renderCharts(data, chartContainer, 'clean');
+            } catch (error) {
+                resultDiv.innerText = "Lỗi: " + error.message;
+                resultDiv.classList.replace('text-emerald-600', 'text-red-500');
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = "none";
+            }
+        }
+
+        // Bước 4: Assembly
+        async function runAssembly() {
+            if (globalAssemblyFiles.length === 0) {
+                alert("Vui lòng tải lên file dữ liệu đã làm sạch để tiến hành lắp ráp!");
+                return;
+            }
+
+            const assembler = document.querySelector('input[name="assembler"]:checked').value;
+            const btn = document.getElementById('btn-run-assembly');
+            const spinner = document.getElementById('assembly-spinner');
+            const statusDiv = document.getElementById('assembly-status');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang lắp ráp...`;
+            spinner.style.display = "block";
+            statusDiv.style.display = "block";
+            statusDiv.classList.remove('text-emerald-600', 'text-red-500');
+            statusDiv.classList.add('text-indigo-600');
+            statusDiv.innerHTML = `Hệ thống đang chạy thuật toán ${assembler}... <br><span class="text-sm font-normal text-slate-500">Quá trình lắp ráp có thể mất nhiều thời gian, vui lòng không đóng trang.</span>`;
+
+            const formData = new FormData();
+            globalAssemblyFiles.forEach(file => formData.append("files", file));
+            formData.append("assembler", assembler);
+
+            try {
+                const response = await fetch('/api/v1/soap/assemble', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                const blob = await response.blob();
+                let filename = "assembly_output.fasta";
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                statusDiv.classList.replace('text-indigo-600', 'text-emerald-600');
+                statusDiv.innerHTML = `
+                    <i class="fa-solid fa-check-circle mr-2"></i> Lắp ráp thành công! <br>
+                    Tệp bản đồ gene <b>${filename}</b> đang được tải xuống.
+                    <br><span class="text-sm font-normal text-slate-500 mt-2 block">Bạn hãy sử dụng file Fasta này cho bước 5 (Chú giải - Annotation).</span>
+                `;
+            } catch (error) {
+                statusDiv.classList.replace('text-indigo-600', 'text-red-500');
+                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi hệ thống: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "Bắt đầu Lắp ráp";
+                spinner.style.display = "none";
+            }
+        }
+
+        // Bước 5: Annotation
+        async function runAnnotation() {
+            if (globalAnnotationFiles.length === 0) {
+                alert("Vui lòng tải lên file Fasta đã được lắp ráp để tiến hành chú giải!");
+                return;
+            }
+
+            const btn = document.getElementById('btn-run-annotation');
+            const spinner = document.getElementById('annotation-spinner');
+            const statusDiv = document.getElementById('annotation-status');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang chạy Pharokka...`;
+            spinner.style.display = "block";
+            statusDiv.style.display = "block";
+            statusDiv.classList.remove('text-red-500');
+            statusDiv.classList.add('text-emerald-600');
+            statusDiv.innerHTML = `Hệ thống đang gọi công cụ Pharokka để tìm gene... <br><span class="text-sm font-normal text-slate-500">Vui lòng chờ trong giây lát.</span>`;
+
+            const formData = new FormData();
+            globalAnnotationFiles.forEach(file => formData.append("files", file));
+
+            try {
+                const response = await fetch('/api/v1/soap/annotate', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                const blob = await response.blob();
+                let filename = "annotated_genome.gbk";
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('attachment') !== -1) {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) { 
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+                statusDiv.innerHTML = `
+                    <i class="fa-solid fa-check-circle mr-2"></i> Chú giải thành công! <br>
+                    Tệp GenBank <b>${filename}</b> đang được tải xuống.
+                    <br><span class="text-sm font-normal text-slate-500 mt-2 block">Bạn có thể dùng file này cho Bước 6 để trực quan hóa trên web, hoặc mở bằng SnapGene.</span>
+                `;
+            } catch (error) {
+                statusDiv.classList.replace('text-emerald-600', 'text-red-500');
+                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi hệ thống: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "Chạy Pharokka";
+                spinner.style.display = "none";
+            }
+        }
+
+        // Bước 6: SeqViz Visualization
+        async function runVisualization() {
+            if (globalVisualizeFiles.length === 0) {
+                alert("Vui lòng tải lên file GenBank (.gbk) để trực quan hóa!");
+                return;
+            }
+
+            const btn = document.getElementById('btn-run-visualize');
+            const spinner = document.getElementById('visualize-spinner');
+            const statusDiv = document.getElementById('visualize-status');
+            const placeholder = document.getElementById('seqviz-placeholder');
+            const container = document.getElementById('seqviz-container');
+
+            btn.disabled = true;
+            spinner.style.display = "block";
+            statusDiv.style.display = "block";
+            statusDiv.classList.remove('text-red-500', 'text-emerald-600');
+            statusDiv.classList.add('text-violet-600');
+            statusDiv.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Đang tải dữ liệu GenBank và khởi tạo thư viện SeqViz...`;
+
+            const formData = new FormData();
+            formData.append("file", globalVisualizeFiles[0]); 
+
+            try {
+                // 1. Gọi API /visualize tại Backend để lấy dữ liệu Text thô
+                const response = await fetch('/api/v1/soap/visualize', { method: 'POST', body: formData });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+
+                // Nhận Raw Text (chuỗi Fasta hoặc GenBank)
+                const genomeDataText = await response.text();
+
+                // 2. Ẩn khối Placeholder và xóa container
+                placeholder.style.display = "none";
+                container.innerHTML = ""; 
+
+                // 3. Khởi tạo SeqViz Viewer và gọi hàm render()
+                const viewer = window.seqviz.Viewer(container, {
+                    name: globalVisualizeFiles[0].name,
+                    file: genomeDataText,
+                    viewer: "both",       
+                    showAnnotations: true,
+                    showPrimers: true,
+                    showComplement: true,
+                    showIndex: true,
+                    zoom: { circular: 0 },
+                    style: { height: "100%", width: "100%" }
+                });
+                
+                // QUAN TRỌNG: Lệnh này quyết định việc biểu đồ có được vẽ ra hay không!
+                viewer.render();
+
+                // Cập nhật trạng thái thành công
+                statusDiv.classList.replace('text-violet-600', 'text-emerald-600');
+                statusDiv.innerHTML = `
+                    <i class="fa-solid fa-check-circle mr-2"></i> Trực quan hóa thành công! <br>
+                    <span class="text-sm font-normal text-slate-500 mt-1 block">Sử dụng con lăn chuột để thu phóng. Bấm đúp vào biểu đồ để tập trung vào từng đoạn gene.</span>
+                `;
+            } catch (error) {
+                statusDiv.classList.replace('text-violet-600', 'text-red-500');
+                statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> Lỗi hệ thống: ${error.message}`;
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = "none";
+            }
+        }
+
+        // ==========================================
+        // HÀM VẼ BIỂU ĐỒ (D3.js) - BƯỚC 1 & 3
+        // ==========================================
+        function renderCharts(data, container, prefix) {
+            data.forEach((report, index) => {
+                const sectionId = `${prefix}-report-${index}`;
+                
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm';
+                
+                div.innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-800 border-l-4 ${prefix === 'clean' ? 'border-emerald-500' : 'border-blue-500'} pl-3 mb-6">
+                        ${report.fileName}
+                    </h3>
+                    
+                    <!-- 1. Per Base Sequence Quality -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-bar mr-2"></i>1. Per Base Sequence Quality</h4>
+                        <div id="quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+                    
+                    <!-- 2. Per Sequence Quality Scores -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-wave-square mr-2"></i>2. Per Sequence Quality Scores</h4>
+                        <div id="seq-quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+
+                    <!-- 3. Per Base Sequence Content -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-line mr-2"></i>3. Per Base Sequence Content</h4>
+                        <div id="base-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+
+                    <!-- 4. Per Sequence GC Content -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-area mr-2"></i>4. Per Sequence GC Content</h4>
+                        <div id="gc-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+
+                    <!-- 5. Per Base N Content -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-minus mr-2"></i>5. Per Base N Content</h4>
+                        <div id="n-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+
+                    <!-- 6. Sequence Length Distribution -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-ruler-horizontal mr-2"></i>6. Sequence Length Distribution</h4>
+                        <div id="len-dist-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+
+                    <!-- 7. Sequence Duplication Levels -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-copy mr-2"></i>7. Sequence Duplication Levels</h4>
+                        <div id="dup-level-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+
+                    <!-- 8. Overrepresented Sequences -->
+                    <div class="mb-8">
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-table-list mr-2"></i>8. Overrepresented Sequences</h4>
+                        <div id="overrepresented-${sectionId}" class="w-full"></div>
+                    </div>
+
+                    <!-- 9. Adapter Content -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-link mr-2"></i>9. Adapter Content</h4>
+                        <div id="adapter-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
+                    </div>
+                `;
+                container.appendChild(div);
+
+                if (report.perBaseQualityData && report.perBaseQualityData.length > 0) {
+                    if (typeof drawPerBaseQualityChart === "function") {
+                        drawPerBaseQualityChart(`#quality-${sectionId}`, report.perBaseQualityData);
+                    }
+                } else {
+                    document.getElementById(`quality-${sectionId}`).innerHTML = "<p class='text-slate-400 text-sm text-center mt-10'>Không có dữ liệu Quality.</p>";
+                }
+
+                if (report.adapterData && report.adapterData.length > 0) {
+                    if (typeof drawAdapterChart === "function") {
+                        drawAdapterChart(`#adapter-${sectionId}`, report.adapterData);
+                    }
+                } else {
+                    document.getElementById(`adapter-${sectionId}`).innerHTML = "<div class='text-center mt-10'><span class='bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Trình tự sạch, không phát hiện Adapter.</span></div>";
+                }
+
+                if (report.perSeqQualityData) drawPerSequenceQualityChart(`#seq-quality-${sectionId}`, report.perSeqQualityData);
+                if (report.perBaseContentData) drawPerBaseSequenceContentChart(`#base-content-${sectionId}`, report.perBaseContentData);
+                if (report.gcContentData) drawPerSequenceGCContentChart(`#gc-content-${sectionId}`, report.gcContentData);
+                if (report.nContentData) drawPerBaseNContentChart(`#n-content-${sectionId}`, report.nContentData);
+                if (report.lengthDistributionData) drawSequenceLengthDistributionChart(`#len-dist-${sectionId}`, report.lengthDistributionData);
+                if (report.duplicationLevelsData) drawDuplicationLevelsChart(`#dup-level-${sectionId}`, report.duplicationLevelsData);
+                if (report.overrepresentedData) drawOverrepresentedTable(`#overrepresented-${sectionId}`, report.overrepresentedData);
+            });
         }
 
         // --- Logic Modal Help ---
@@ -476,7 +872,7 @@
         document.querySelector(".modal-overlay").onclick = closeModal;
     </script>
 
-    <!-- Script vẽ biểu đồ D3.js do Spring Boot cung cấp -->
+    <!-- Script vẽ biểu đồ D3.js do Spring Boot cung cấp (Bước 1 & 3) -->
     <script th:src="@{/js/chart-logic.js}"></script>
 
 </body>

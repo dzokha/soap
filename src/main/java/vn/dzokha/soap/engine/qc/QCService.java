@@ -1,4 +1,4 @@
-package vn.dzokha.soap.service;
+package vn.dzokha.soap.engine.qc;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,30 +31,30 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Service
-public class AnalysisService {
+public class QCService {
 
-    private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
+    private static final Logger log = LoggerFactory.getLogger(QCService.class);
 
     private final Executor analysisTaskExecutor;
     private final SOAPProperties properties;
     private final ModuleFactory moduleFactory;
     private final SequenceFactory sequenceFactory;
-    private final AnalysisRunner analysisRunner;
+    private final QCRunner qcRunner;
     private final ApplicationContext applicationContext; // Thêm biến này
 
 
     @Autowired    
-    public AnalysisService(SOAPProperties properties, 
+    public QCService(SOAPProperties properties, 
                            @Qualifier("analysisTaskExecutor") Executor executor,
                            ModuleFactory moduleFactory,
                            SequenceFactory sequenceFactory,
-                           AnalysisRunner analysisRunner,
+                           QCRunner qcRunner,
                            ApplicationContext applicationContext) {
         this.properties = properties;
         this.analysisTaskExecutor = executor;
         this.moduleFactory = moduleFactory;
         this.sequenceFactory = sequenceFactory;
-        this.analysisRunner = analysisRunner;
+        this.qcRunner = qcRunner;
         this.applicationContext = applicationContext; // Gán giá trị
         System.out.println("Upload directory: " + properties.getUploadDir());
     }
@@ -97,7 +97,7 @@ public class AnalysisService {
         // ĐO LẦN 1: Tình trạng lúc máy đang rảnh (Trước khi chạy)
         logSystemResources("TRƯỚC KHI BẮT ĐẦU PHÂN TÍCH " + files.length + " FILE");
         List<CompletableFuture<AnalysisResult>> futures = new ArrayList<>();
-        AnalysisService selfProxy = applicationContext.getBean(AnalysisService.class);
+        QCService selfProxy = applicationContext.getBean(QCService.class);
         for (MultipartFile file : files) {
             futures.add(selfProxy.processUploadedFile(file));
             // futures.add(this.processUploadedFile(file));
@@ -134,7 +134,7 @@ public class AnalysisService {
             QCModule[] modules = moduleFactory.getStandardModuleList();
             
             // Chạy phân tích đồng bộ trong luồng Async này
-            analysisRunner.runAnalysisSync(sequenceFile, modules);
+            qcRunner.runAnalysisSync(sequenceFile, modules);
 
             log.info("Hoàn thành phân tích cho: {}", fileName);
             return CompletableFuture.completedFuture(
