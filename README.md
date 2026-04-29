@@ -88,7 +88,7 @@ Giúp phát hiện:
 
 ### Yêu cầu
 
-* Java 21
+* Java 21: https://www.oracle.com/java/technologies/downloads/
 * Maven
 * Node.js >= 18
 
@@ -106,11 +106,13 @@ cd soap
 ### 2. Khởi chạy Backend (Spring Boot)
 
 ```bash
-# Cấp quyền (Linux/Mac)
-chmod +x mvn
+# Trên Windows (Dùng Command Prompt / PowerShell)
+mvnw.cmd spring-boot:run
 
-# Build và chạy
-mvn spring-boot:run
+# Trên Linux/Mac (Terminal)
+chmod +x mvnw
+./mvnw spring-boot:run
+
 ```
 
 👉 Backend chạy tại:
