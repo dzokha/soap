@@ -161,9 +161,17 @@
                         <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file FASTQ vào đây</h3>
                     </label>
                     <div id="file-list" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
-                    <button id="analyzeBtn" onclick="uploadFile()" class="mt-6 px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-md">
-                        Bắt đầu phân tích (QC)
-                    </button>
+                    
+                    <!-- THÊM NHÓM NÚT CÓ CHỨA CẤU HÌNH LIMITS -->
+                    <div class="flex justify-center items-center gap-4 mt-6">
+                        <button id="analyzeBtn" onclick="uploadFile()" class="px-8 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-md">
+                            <i class="fa-solid fa-chart-line mr-2"></i> Bắt đầu phân tích (QC)
+                        </button>
+                        <button onclick="openQCSettings()" class="px-5 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 border border-slate-200 transition shadow-sm" title="Tùy chỉnh ngưỡng cảnh báo (limits.txt)">
+                            <i class="fa-solid fa-sliders"></i>
+                        </button>
+                    </div>
+
                     <div id="spinner" class="spinner"></div>
                     <div id="result-status" class="mt-4 font-semibold text-blue-600 hidden"></div>
                 </div>
@@ -215,7 +223,16 @@
                         <h3 class="text-lg font-semibold text-slate-800 mb-1">Kéo thả file đã làm sạch vào đây</h3>
                     </label>
                     <div id="file-list2" class="flex flex-wrap justify-center gap-2 mt-4 text-sm"></div>
-                    <button id="analyzeBtn2" onclick="uploadCleanFile()" class="mt-6 px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition">Phân tích Clean QC</button>
+                    
+                    <div class="flex justify-center items-center gap-4 mt-6">
+                        <button id="analyzeBtn2" onclick="uploadCleanFile()" class="px-8 py-3 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition shadow-md">
+                            <i class="fa-solid fa-check-double mr-2"></i> Phân tích Clean QC
+                        </button>
+                        <button onclick="openQCSettings()" class="px-5 py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 border border-slate-200 transition shadow-sm" title="Tùy chỉnh ngưỡng cảnh báo (limits.txt)">
+                            <i class="fa-solid fa-sliders"></i>
+                        </button>
+                    </div>
+
                     <div id="spinner2" class="spinner" style="border-top-color: #10b981;"></div>
                     <div id="result-status2" class="mt-4 font-semibold text-emerald-600 hidden"></div>
                 </div>
@@ -278,16 +295,13 @@
                 </div>
             </div>
 
-            <!-- ========================================== -->
-            <!-- TAB 6: VISUALIZATION (TÍCH HỢP SEQVIZ)     -->
-            <!-- ========================================== -->
+            <!-- TAB 6: VISUALIZATION (TÍCH HỢP SEQVIZ) -->
             <div id="tab-visualize" class="tab-content hidden max-w-5xl mx-auto space-y-6">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-slate-800">Bước 6: Trực quan hóa (Visualization)</h2>
                     <p class="text-slate-500">Hiển thị bản đồ gene tương tác trực tiếp trên Web. Cấu trúc GenBank sẽ được phân tích và vẽ tự động bằng thư viện <a href="https://github.com/Lattice-Automation/seqviz" target="_blank" class="text-violet-500 hover:underline">SeqViz</a>.</p>
                 </div>
                 
-                <!-- Box Upload Visualization -->
                 <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 text-center transition-all hover:border-violet-400 hover:shadow-md mb-6">
                     <input type="file" id="fileInputVisualize" accept=".gbk,.gb,.fasta,.fa" class="hidden">
                     <label for="fileInputVisualize" class="cursor-pointer block">
@@ -307,16 +321,12 @@
                     <div id="visualize-status" class="mt-4 font-semibold text-violet-600 hidden"></div>
                 </div>
 
-                <!-- KHU VỰC HIỂN THỊ SEQVIZ MAP -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden" style="height: 700px;">
-                    <!-- Placeholder khi chưa có dữ liệu -->
                     <div id="seqviz-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 z-10 bg-white">
                         <i class="fa-solid fa-circle-nodes text-5xl mb-3 opacity-50"></i>
                         <p class="font-medium text-lg">Bản đồ gene (Plasmid / Phage Map) sẽ hiển thị tại đây</p>
                         <p class="text-sm mt-2 opacity-70">Thay thế hoàn hảo cho phần mềm SnapGene</p>
                     </div>
-                    
-                    <!-- Khung cho SeqViz render -->
                     <div id="seqviz-container" class="w-full h-full relative z-0"></div>
                 </div>
             </div>
@@ -347,6 +357,72 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- MODAL: CẤU HÌNH GIỚI HẠN QC (limits.txt)   -->
+    <!-- ========================================== -->
+    <div id="qcLimitsModal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm modal-overlay" onclick="closeQCSettings()"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl modal-animate overflow-hidden">
+            <div class="bg-slate-800 px-6 py-4 flex justify-between items-center text-white">
+                <h2 class="font-bold text-lg"><i class="fa-solid fa-sliders mr-2"></i> Cấu hình Giới hạn QC (limits.txt)</h2>
+                <button onclick="closeQCSettings()" class="hover:text-slate-300 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 text-slate-600 space-y-6 max-h-[60vh] overflow-y-auto">
+                <p class="text-sm">Thiết lập các ngưỡng cảnh báo (Warning / Error) cho từng module. Các giá trị này tương đương với tệp <code>limits.txt</code> trong FastQC gốc.</p>
+                
+                <!-- Adapter Content Limits -->
+                <div class="border-b border-slate-100 pb-4">
+                    <h3 class="font-semibold text-slate-800 mb-3"><i class="fa-solid fa-link mr-2"></i>Adapter Content (%)</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Warning (Vàng)</label>
+                            <input type="number" id="lim_adapter_warn" value="5" class="w-full border border-slate-300 rounded px-3 py-1.5 outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Error (Đỏ)</label>
+                            <input type="number" id="lim_adapter_error" value="10" class="w-full border border-slate-300 rounded px-3 py-1.5 outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- N Content Limits -->
+                <div class="border-b border-slate-100 pb-4">
+                    <h3 class="font-semibold text-slate-800 mb-3"><i class="fa-solid fa-minus mr-2"></i>N Content (%)</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Warning (Vàng)</label>
+                            <input type="number" id="lim_n_warn" value="5" class="w-full border border-slate-300 rounded px-3 py-1.5 outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Error (Đỏ)</label>
+                            <input type="number" id="lim_n_error" value="20" class="w-full border border-slate-300 rounded px-3 py-1.5 outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Duplication Levels -->
+                <div>
+                    <h3 class="font-semibold text-slate-800 mb-3"><i class="fa-solid fa-copy mr-2"></i>Duplication Remaining (%)</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Warning (Vàng) &lt;</label>
+                            <input type="number" id="lim_dup_warn" value="70" class="w-full border border-slate-300 rounded px-3 py-1.5 outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-500 mb-1">Error (Đỏ) &lt;</label>
+                            <input type="number" id="lim_dup_error" value="50" class="w-full border border-slate-300 rounded px-3 py-1.5 outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t flex justify-end gap-3">
+                <button onclick="closeQCSettings()" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition">Hủy</button>
+                <button onclick="saveQCSettings()" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">Lưu cấu hình</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Logic -->
     <script th:inline="javascript">
         // Biến toàn cục
@@ -354,7 +430,14 @@
         let globalCleanFiles = []; 
         let globalAssemblyFiles = []; 
         let globalAnnotationFiles = []; 
-        let globalVisualizeFiles = []; // Dành cho Bước 6
+        let globalVisualizeFiles = []; 
+
+        // Biến lưu cấu hình limits.txt (Đồng bộ với các field input)
+        let qcLimitsConfig = {
+            adapterWarn: 5, adapterError: 10,
+            nWarn: 5, nError: 20,
+            dupWarn: 70, dupError: 50
+        };
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -371,6 +454,20 @@
             activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50');
             activeBtn.querySelector('div').classList.add('bg-blue-100', 'text-blue-600');
             activeBtn.querySelector('div').classList.remove('bg-slate-100', 'text-slate-500');
+        }
+
+        /* --- LOGIC MODAL QC LIMITS --- */
+        function openQCSettings() { document.getElementById('qcLimitsModal').classList.remove('hidden'); }
+        function closeQCSettings() { document.getElementById('qcLimitsModal').classList.add('hidden'); }
+        
+        function saveQCSettings() {
+            qcLimitsConfig.adapterWarn = document.getElementById('lim_adapter_warn').value;
+            qcLimitsConfig.adapterError = document.getElementById('lim_adapter_error').value;
+            qcLimitsConfig.nWarn = document.getElementById('lim_n_warn').value;
+            qcLimitsConfig.nError = document.getElementById('lim_n_error').value;
+            qcLimitsConfig.dupWarn = document.getElementById('lim_dup_warn').value;
+            qcLimitsConfig.dupError = document.getElementById('lim_dup_error').value;
+            closeQCSettings();
         }
 
         /* --- LOGIC BẮT SỰ KIỆN CHỌN FILE --- */
@@ -407,7 +504,7 @@
             }
         });
 
-        /* --- LOGIC CÁC BƯỚC XỬ LÝ (ĐÃ ĐƯỢC KHÔI PHỤC ĐẦY ĐỦ) --- */
+        /* --- LOGIC CÁC BƯỚC XỬ LÝ --- */
 
         // Bước 1: QC
         async function uploadFile() {
@@ -421,6 +518,9 @@
 
             const formData = new FormData();
             globalFiles.forEach(file => formData.append("files", file));
+            
+            // Đính kèm các tham số Limits lên Backend
+            Object.keys(qcLimitsConfig).forEach(key => formData.append(`limits_${key}`, qcLimitsConfig[key]));
 
             btn.disabled = true;
             spinner.style.display = "block";
@@ -533,6 +633,8 @@
 
             const formData = new FormData();
             globalCleanFiles.forEach(file => formData.append("files", file));
+            
+            Object.keys(qcLimitsConfig).forEach(key => formData.append(`limits_${key}`, qcLimitsConfig[key]));
 
             btn.disabled = true;
             spinner.style.display = "block";
@@ -718,7 +820,6 @@
             formData.append("file", globalVisualizeFiles[0]); 
 
             try {
-                // 1. Gọi API /visualize tại Backend để lấy dữ liệu Text thô
                 const response = await fetch('/api/v1/soap/visualize', { method: 'POST', body: formData });
                 
                 if (!response.ok) {
@@ -726,14 +827,11 @@
                     throw new Error(errorText);
                 }
 
-                // Nhận Raw Text (chuỗi Fasta hoặc GenBank)
                 const genomeDataText = await response.text();
 
-                // 2. Ẩn khối Placeholder và xóa container
                 placeholder.style.display = "none";
                 container.innerHTML = ""; 
 
-                // 3. Khởi tạo SeqViz Viewer và gọi hàm render()
                 const viewer = window.seqviz.Viewer(container, {
                     name: globalVisualizeFiles[0].name,
                     file: genomeDataText,
@@ -746,10 +844,8 @@
                     style: { height: "100%", width: "100%" }
                 });
                 
-                // QUAN TRỌNG: Lệnh này quyết định việc biểu đồ có được vẽ ra hay không!
                 viewer.render();
 
-                // Cập nhật trạng thái thành công
                 statusDiv.classList.replace('text-violet-600', 'text-emerald-600');
                 statusDiv.innerHTML = `
                     <i class="fa-solid fa-check-circle mr-2"></i> Trực quan hóa thành công! <br>
@@ -765,8 +861,36 @@
         }
 
         // ==========================================
-        // HÀM VẼ BIỂU ĐỒ (D3.js) - BƯỚC 1 & 3
+        // HÀM VẼ BIỂU ĐỒ (D3.js) VỚI SAFE DRAW (CỰC KỲ AN TOÀN)
         // ==========================================
+        function safeDraw(functionName, selector, data) {
+            const container = document.querySelector(selector);
+            if (!container) return;
+            
+            // Xử lý riêng cho một số biểu đồ có thể rỗng
+            if (!data || (Array.isArray(data) && data.length === 0)) {
+                if (functionName === 'drawAdapterChart') {
+                    container.innerHTML = "<div class='text-center mt-10'><span class='bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Trình tự sạch, không phát hiện Adapter.</span></div>";
+                } else if (functionName === 'drawOverrepresentedTable') {
+                    container.innerHTML = "<div class='text-center mt-6'><span class='bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Không có trình tự lặp lại quá mức.</span></div>";
+                } else {
+                    container.innerHTML = "<p class='text-slate-400 text-sm text-center mt-10'>Không có dữ liệu cho biểu đồ này.</p>";
+                }
+                return;
+            }
+            
+            try {
+                if (typeof window[functionName] === "function") {
+                    window[functionName](selector, data);
+                } else {
+                    container.innerHTML = `<p class='text-red-500 text-sm text-center mt-10'>Lỗi: Đang tải thiếu file <b>chart-logic.js</b></p>`;
+                }
+            } catch (e) {
+                console.error(`Lỗi trong hàm ${functionName}:`, e);
+                container.innerHTML = `<p class='text-red-500 text-sm text-center mt-10'><i class="fa-solid fa-triangle-exclamation mr-1"></i> Lỗi dữ liệu biểu đồ: ${e.message}</p>`;
+            }
+        }
+
         function renderCharts(data, container, prefix) {
             data.forEach((report, index) => {
                 const sectionId = `${prefix}-report-${index}`;
@@ -779,55 +903,46 @@
                         ${report.fileName}
                     </h3>
                     
-                    <!-- 1. Per Base Sequence Quality -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-bar mr-2"></i>1. Per Base Sequence Quality</h4>
                         <div id="quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
                     
-                    <!-- 2. Per Sequence Quality Scores -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-wave-square mr-2"></i>2. Per Sequence Quality Scores</h4>
                         <div id="seq-quality-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
 
-                    <!-- 3. Per Base Sequence Content -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-line mr-2"></i>3. Per Base Sequence Content</h4>
                         <div id="base-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
 
-                    <!-- 4. Per Sequence GC Content -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-chart-area mr-2"></i>4. Per Sequence GC Content</h4>
                         <div id="gc-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
 
-                    <!-- 5. Per Base N Content -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-minus mr-2"></i>5. Per Base N Content</h4>
                         <div id="n-content-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
 
-                    <!-- 6. Sequence Length Distribution -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-ruler-horizontal mr-2"></i>6. Sequence Length Distribution</h4>
                         <div id="len-dist-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
 
-                    <!-- 7. Sequence Duplication Levels -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-copy mr-2"></i>7. Sequence Duplication Levels</h4>
                         <div id="dup-level-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
                     </div>
 
-                    <!-- 8. Overrepresented Sequences -->
                     <div class="mb-8">
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-table-list mr-2"></i>8. Overrepresented Sequences</h4>
                         <div id="overrepresented-${sectionId}" class="w-full"></div>
                     </div>
 
-                    <!-- 9. Adapter Content -->
                     <div>
                         <h4 class="text-sm font-semibold text-slate-500 uppercase mb-2"><i class="fa-solid fa-link mr-2"></i>9. Adapter Content</h4>
                         <div id="adapter-${sectionId}" class="w-full overflow-x-auto min-h-[300px] border border-slate-100 rounded bg-white p-2 shadow-sm"></div>
@@ -835,41 +950,18 @@
                 `;
                 container.appendChild(div);
 
-                if (report.perBaseQualityData && report.perBaseQualityData.length > 0) {
-                    if (typeof drawPerBaseQualityChart === "function") {
-                        drawPerBaseQualityChart(`#quality-${sectionId}`, report.perBaseQualityData);
-                    }
-                } else {
-                    document.getElementById(`quality-${sectionId}`).innerHTML = "<p class='text-slate-400 text-sm text-center mt-10'>Không có dữ liệu Quality.</p>";
-                }
-
-                if (report.adapterData && report.adapterData.length > 0) {
-                    if (typeof drawAdapterChart === "function") {
-                        drawAdapterChart(`#adapter-${sectionId}`, report.adapterData);
-                    }
-                } else {
-                    document.getElementById(`adapter-${sectionId}`).innerHTML = "<div class='text-center mt-10'><span class='bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium'><i class='fa-solid fa-check-circle mr-1'></i> Trình tự sạch, không phát hiện Adapter.</span></div>";
-                }
-
-                if (report.perSeqQualityData) drawPerSequenceQualityChart(`#seq-quality-${sectionId}`, report.perSeqQualityData);
-                if (report.perBaseContentData) drawPerBaseSequenceContentChart(`#base-content-${sectionId}`, report.perBaseContentData);
-                if (report.gcContentData) drawPerSequenceGCContentChart(`#gc-content-${sectionId}`, report.gcContentData);
-                if (report.nContentData) drawPerBaseNContentChart(`#n-content-${sectionId}`, report.nContentData);
-                if (report.lengthDistributionData) drawSequenceLengthDistributionChart(`#len-dist-${sectionId}`, report.lengthDistributionData);
-                if (report.duplicationLevelsData) drawDuplicationLevelsChart(`#dup-level-${sectionId}`, report.duplicationLevelsData);
-                if (report.overrepresentedData) drawOverrepresentedTable(`#overrepresented-${sectionId}`, report.overrepresentedData);
+                // Gọi vẽ từng biểu đồ thông qua Safe Draw
+                safeDraw('drawPerBaseQualityChart', `#quality-${sectionId}`, report.perBaseQualityData);
+                safeDraw('drawPerSequenceQualityChart', `#seq-quality-${sectionId}`, report.perSeqQualityData);
+                safeDraw('drawPerBaseSequenceContentChart', `#base-content-${sectionId}`, report.perBaseContentData);
+                safeDraw('drawPerSequenceGCContentChart', `#gc-content-${sectionId}`, report.gcContentData);
+                safeDraw('drawPerBaseNContentChart', `#n-content-${sectionId}`, report.nContentData);
+                safeDraw('drawSequenceLengthDistributionChart', `#len-dist-${sectionId}`, report.lengthDistributionData);
+                safeDraw('drawDuplicationLevelsChart', `#dup-level-${sectionId}`, report.duplicationLevelsData);
+                safeDraw('drawOverrepresentedTable', `#overrepresented-${sectionId}`, report.overrepresentedData);
+                safeDraw('drawAdapterChart', `#adapter-${sectionId}`, report.adapterData);
             });
         }
-
-        // --- Logic Modal Help ---
-        const modal = document.getElementById("helpModal");
-        const openBtn = document.getElementById("openHelp");
-        const closeModal = () => modal.classList.add("hidden");
-        
-        openBtn.onclick = () => modal.classList.remove("hidden");
-        document.querySelector(".close-modal").onclick = closeModal;
-        document.getElementById("closeHelpBtn").onclick = closeModal;
-        document.querySelector(".modal-overlay").onclick = closeModal;
     </script>
 
     <!-- Script vẽ biểu đồ D3.js do Spring Boot cung cấp (Bước 1 & 3) -->

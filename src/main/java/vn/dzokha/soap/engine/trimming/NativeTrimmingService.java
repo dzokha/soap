@@ -4,72 +4,76 @@ import org.springframework.stereotype.Service;
 import vn.dzokha.soap.domain.sequence.Sequence;
 import vn.dzokha.soap.io.parser.SequenceFile;
 import vn.dzokha.soap.io.parser.SequenceFormatException; 
-import vn.dzokha.soap.io.writer.FastQWriter; // IMPORT CLASS GHI FILE
+import vn.dzokha.soap.io.writer.FastQWriter; 
+import vn.dzokha.soap.config.QCConfigManager; // IMPORT QUẢN LÝ CẤU HÌNH
 
-import java.io.File; // IMPORT XỬ LÝ FILE
+import java.io.File;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Service này là "Nhạc trưởng" của quá trình Trimming.
- * Nó sẽ MƯỢN SequenceFile từ thư mục IO để đọc, giao cho SequenceTrimmer cắt,
- * và gọi IO Writer để lưu kết quả ra file.
- */
 @Service
 public class NativeTrimmingService {
 
     private static final Logger log = LoggerFactory.getLogger(NativeTrimmingService.class);
     private final SequenceTrimmer trimmerAlgo;
+    private final QCConfigManager qcConfigManager; // THÊM BIẾN NÀY
 
-    public NativeTrimmingService(SequenceTrimmer trimmerAlgo) {
+    public NativeTrimmingService(SequenceTrimmer trimmerAlgo, QCConfigManager qcConfigManager) {
         this.trimmerAlgo = trimmerAlgo;
+        this.qcConfigManager = qcConfigManager;
     }
 
-    /**
-     * Hàm thực thi cắt dữ liệu 100% Native Java.
-     * TRẢ VỀ: File (.fastq.gz) đã được làm sạch và nén lại.
-     */
-    public File executeTrimming(SequenceFile inFile, TrimConfig config) throws Exception {
+    public File executeTrimming(SequenceFile inFile, TrimConfig config, boolean autoDetectAdapter) throws Exception {
         int totalReads = 0;
         int droppedReads = 0;
+        int adapterFoundCount = 0;
         
-        log.info("Bắt đầu Native Trimming (In-memory)... Adapter: {}", config.getAdapterSequence());
+        log.info("Bắt đầu Native Trimming...");
 
-        // 1. Tạo file tạm thời trên RAM/Đĩa để chứa dữ liệu xuất ra
         File outputFile = File.createTempFile("trimmed_output_", ".fastq.gz");
 
-        // 2. Sử dụng try-with-resources để mở FastQWriter và tự động đóng/giải phóng bộ nhớ khi xong
         try (FastQWriter writer = new FastQWriter(outputFile, true)) {
             while (inFile.hasNext()) {
                 Sequence seq = inFile.next();
                 totalReads++;
 
-                // Cắt theo chất lượng (Quality Trimming)
+                // 1. Cắt theo chất lượng
                 if (config.getQualityCutoff() > 0) {
                     trimmerAlgo.trimByQuality(seq, config.getQualityCutoff());
                 }
 
-                // Cắt Adapter
-                if (config.getAdapterSequence() != null) {
-                    trimmerAlgo.trimAdapter(seq, config.getAdapterSequence(), config.getMinOverlap(), config.getErrorRate());
+                // 2. Tự động rà quét và cắt Adapter từ file adapters.txt
+                if (autoDetectAdapter) {
+                    // Quét qua toàn bộ danh sách Adapter đã load từ file
+                    for (Map.Entry<String, String> entry : qcConfigManager.getAllAdapters().entrySet()) {
+                        String adapterSeq = entry.getValue();
+                        // Trimmer sẽ trả về boolean hoặc bạn có thể kiểm tra xem seq có bị ngắn đi không
+                        int oldLength = seq.getSequence().length();
+                        trimmerAlgo.trimAdapter(seq, adapterSeq, config.getMinOverlap(), config.getErrorRate());
+                        
+                        if (seq.getSequence().length() < oldLength) {
+                            adapterFoundCount++;
+                            break; // Nếu tìm thấy và cắt 1 adapter rồi thì dừng vòng lặp cho đoạn gen này để tối ưu tốc độ
+                        }
+                    }
                 }
 
-                // Lọc theo độ dài tối thiểu
+                // 3. Lọc theo độ dài
                 if (seq.getSequence().length() < config.getMinLength()) {
                     droppedReads++;
-                    continue; // Bỏ qua đoạn DNA này, không lưu
+                    continue; 
                 }
 
-                // Giao cho Tầng Writer để ghi xuống file
                 writer.write(seq);
             }
         } catch (SequenceFormatException e) {
-            log.error("Lỗi định dạng chuỗi DNA khi đọc file: {}", e.getMessage());
+            log.error("Lỗi định dạng chuỗi DNA: {}", e.getMessage());
         }
 
-        log.info("Hoàn tất Trimming! Tổng số reads: {}. Bị loại do quá ngắn: {}", totalReads, droppedReads);
+        log.info("Hoàn tất Trimming! Tổng số reads: {}. Bị loại: {}. Số lần phát hiện Adapter: {}", 
+                 totalReads, droppedReads, adapterFoundCount);
         
-        // 3. Trả file đã ghi xong về cho Controller
         return outputFile;
     }
 }

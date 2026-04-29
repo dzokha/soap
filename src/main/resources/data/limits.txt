@@ -79,6 +79,3 @@ sequence_length	error	1
 
 adapter	warn	5
 adapter	error	10
-
-
-	
