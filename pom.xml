@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>vn.dzokha</groupId>
-	<artifactId>FastQC</artifactId>
+	<artifactId>soap</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>SOAP</name>
 	<description>A quality control analysis tool for high throughput sequencing data  Resources</description>
@@ -62,18 +62,6 @@
 	    </dependency>
 
 		<dependency>
-	        <groupId>ch.systemsx.cisd</groupId>
-	        <artifactId>sis-jhdf5</artifactId>
-	        <version>19.04.1</version>
-	    </dependency>
-
-	    <dependency>
-	        <groupId>org.itadaki</groupId>
-	        <artifactId>bzip2</artifactId>
-	        <version>0.9</version>
-	    </dependency>
-
-		<dependency>
         	<groupId>com.github.samtools</groupId>
 	        <artifactId>htsjdk</artifactId>
 	        <version>4.2.0</version>
@@ -123,13 +111,6 @@
 	        <scope>test</scope>
 	    </dependency>
 	</dependencies>
-
-	<repositories>
-	    <repository>
-	        <id>scijava.public</id>
-	        <url>https://maven.scijava.org/content/groups/public</url>
-	    </repository>
-	</repositories>
 
 	<build>
 		<plugins>

@@ -2,11 +2,11 @@ package vn.dzokha.soap.io.parser;
 
 import java.io.*;
 import java.util.regex.Pattern;
-import org.itadaki.bzip2.BZip2InputStream;
+// ĐÃ THAY THẾ: Sử dụng thư viện chuẩn công nghiệp của Apache thay cho thư viện cũ
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import vn.dzokha.soap.config.SOAPProperties;
 
 import vn.dzokha.soap.domain.sequence.Sequence;
-
 
 public class FastQFile implements SequenceFile {
 
@@ -30,11 +30,10 @@ public class FastQFile implements SequenceFile {
         this.representativeFile = new File(fileName);
         this.inputStream = inputStream;
 
-        // TỐI ƯU 2: Dùng biến local để tính toán trước khi gán final
         boolean casava = false;
         boolean filter = false;
-        if (properties.getAnalysis().isCasava()) {
-            casava = true;
+        if (properties != null && properties.getAnalysis() != null) {
+            casava = properties.getAnalysis().isCasava();
             filter = properties.getAnalysis().isNofilter();
         }
         this.casavaMode = casava;
@@ -46,11 +45,12 @@ public class FastQFile implements SequenceFile {
         if (lowerName.endsWith(".gz")) {
             wrappedStream = new MultiMemberGZIPInputStream(inputStream);
         } else if (lowerName.endsWith(".bz2")) {
-            wrappedStream = new BZip2InputStream(inputStream, false);
+            // ĐÃ THAY THẾ: Khởi tạo luồng giải nén bằng Apache Compress
+            wrappedStream = new BZip2CompressorInputStream(inputStream);
         }
 
         this.br = new BufferedReader(new InputStreamReader(wrappedStream));
-        readNext(); // Nạp sẵn bản ghi đầu tiên
+        readNext(); 
     }
 
     private void readNext() throws SequenceFormatException {
@@ -83,12 +83,10 @@ public class FastQFile implements SequenceFile {
                 throw new SequenceFormatException("Thiếu dấu '+' tại dòng " + lineNumber);
             }
 
-            // Chỉ kiểm tra Colorspace ở những dòng đầu tiên để tiết kiệm CPU
             if (lineNumber <= 4) {
                 isColorspace = COLORSPACE_PATTERN.matcher(seq).matches();
             }
 
-            // TỐI ƯU 3: Khởi tạo Sequence với boolean colorspace trực tiếp (theo class Sequence ta đã tối ưu)
             String finalSeq = isColorspace ? convertColorspaceToBases(seq) : seq;
             nextSequence = new Sequence(id, finalSeq, quality, representativeFile, isColorspace);
 
@@ -105,13 +103,11 @@ public class FastQFile implements SequenceFile {
     public void close() {
         try {
             if (br != null) br.close();
-            // BufferedReader.close() sẽ tự đóng inputStream bên trong nó
         } catch (IOException e) {
             // Log quietly
         }
     }
 
-    // Giữ nguyên logic xử lý chuỗi
     private String convertColorspaceToBases(String s) { return s; }
 
     @Override public String name() { return name; }
