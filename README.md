@@ -89,8 +89,6 @@ Giúp phát hiện:
 ### Yêu cầu
 * git: https://git-scm.com/
 * Java 21: https://www.oracle.com/java/technologies/downloads/
-* Maven
-* Node.js >= 18
 
 ---
 
